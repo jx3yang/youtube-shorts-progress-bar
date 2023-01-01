@@ -1,0 +1,19 @@
+{
+  "name": "Extension Name",
+  "description": "Extension Description",
+  "version": "0.1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "Popup.html"
+  },
+  "options_page": "Options.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
