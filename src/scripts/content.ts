@@ -79,7 +79,7 @@ const areDifferentElements = (currentElements: Element[], newElements: Element[]
 }
 
 /**
- * Creates a progress bar for the video inside the parent element, and appends it
+ * Creates a progress bar for the video inside the parent element, and appends it to the overlay inside the parent
  * 
  * TODO: implement dragging
  * 
@@ -90,8 +90,16 @@ const createProgressBarAndAppend = (parent?: Element | null) => {
   if (parent) { 
     const overlay = parent.querySelector('#overlay')
     const videoElement = parent.querySelector('video')
+
     if (videoElement && overlay) {
+      const containerDivId = "youtube-shorts-progress-bar-container-id"
+      const existingContainerDiv = overlay.querySelector(`#${containerDivId}`)
+      if (existingContainerDiv) {
+        return existingContainerDiv
+      }
+
       let containerDiv = document.createElement('div')
+      containerDiv.id = containerDivId
       containerDiv.setAttribute('style', containerStyle)
       let progressBarContainer = document.createElement('div')
       progressBarContainer.setAttribute('style', progressBarContainerStyle)
