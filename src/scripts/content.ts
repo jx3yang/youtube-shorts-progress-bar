@@ -1,3 +1,28 @@
+const progressBarContainerStyle = (height: string) => `
+  width: 100%;
+  height: ${height};
+  position: inherit;
+  display: flex;
+  justify-content: center
+`
+
+const progressBarStyle = `
+  position: absolute;
+  background-color: rgba(255,255,255,.5);
+  opacity: 50%;
+  width: 90%;
+  z-index: 10;
+  bottom: 15%;
+  height: 3px;
+`
+
+const progressedStyle = (width: string) => `
+  z-index: 20;
+  height: 100%;
+  width: ${width};
+  background-color: rgba(255,255,255,1);
+`
+
 /**
  * @returns the list of shorts
  */
@@ -45,25 +70,47 @@ const areDifferentElements = (currentElements: Element[], newElements: Element[]
 }
 
 /**
- * Creates a progress bar and appends it to the given element
+ * Creates a progress bar for the video inside the parent element, and appends it
  * 
- * TODO: actually implement this
+ * TODO: implement click listener
  * 
- * @param parent the parent element to append the progress bar
+ * @param parent the parent element that contains the video element
  * @returns the progress bar element
  */
-const createProgressBarAndAppend = (parent: Element) => {
-  let div = document.createElement('div')
-  div.setAttribute('style', 'background-color: red; width: 100px; height: 100px;')
-  parent.appendChild(div)
-  return div
+const createProgressBarAndAppend = (parent?: Element | null) => {
+  if (parent) { 
+    const videoElement = parent.querySelector('video')
+    if (videoElement) {
+      let containerDiv = document.createElement('div')
+      containerDiv.setAttribute('style', progressBarContainerStyle(videoElement.style['height']))
+      let progressBar = document.createElement('div')
+      progressBar.setAttribute('style', progressBarStyle)
+      let progressed = document.createElement('div')
+      progressed.setAttribute('style', progressedStyle('0%'))
+
+      videoElement.addEventListener('timeupdate', () => {
+        if (!isNaN(videoElement.duration)) {
+          const percent_complete = (videoElement.currentTime * 100) / videoElement.duration;
+          progressed.setAttribute('style', progressedStyle(`${percent_complete}%`))
+        }
+      })
+
+      progressBar.appendChild(progressed)
+      containerDiv.appendChild(progressBar)
+      parent.appendChild(containerDiv)
+
+      return containerDiv
+    }
+  }
 }
+
+const getVideoParentElement = (rendererElement: Element) => waitUntil<Element>(() => rendererElement.querySelector('.html5-video-container'), (element) => !!element, 50)
 
 const bootstrap = () => {
   let shortsElements: Element[] = []
 
   let activeElement: Element
-  let activeProgressBar: Element
+  let activeProgressBar: Element | undefined
 
   // this observes each short element to listen for changes in the 'is-active' attribute
   const elementsObserver = new MutationObserver((mutations) => {
@@ -95,7 +142,9 @@ const bootstrap = () => {
       if (activeProgressBar) {
         activeProgressBar.remove()
       }
-      activeProgressBar = createProgressBarAndAppend(activeElement)
+      getVideoParentElement(activeElement).then((videoParent) => {
+        activeProgressBar = createProgressBarAndAppend(videoParent)
+      })
     }
   }
 
