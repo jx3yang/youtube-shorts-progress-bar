@@ -203,4 +203,16 @@ const bootstrap = () => {
   refreshShortsElements()
 }
 
-bootstrap()
+const bootstrapIfOnShortsPage = () => {
+  const shortsUrlPattern = /^https\:\/\/www\.youtube\.com\/shorts*/
+  const currentUrl = window.location.href
+  if (shortsUrlPattern.test(currentUrl)) {
+    bootstrap()
+  }
+}
+
+bootstrapIfOnShortsPage()
+
+chrome.runtime.onMessage.addListener((request: Message) => {
+  bootstrapIfOnShortsPage()
+})

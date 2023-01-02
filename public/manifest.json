@@ -1,6 +1,6 @@
 {
-  "name": "Extension Name",
-  "description": "Extension Description",
+  "name": "YouTube Shorts Progress Bar",
+  "description": "Gives you a progress bar for YouTube shorts",
   "version": "0.1.0",
   "manifest_version": 3,
   "action": {
@@ -10,9 +10,12 @@
   "background": {
     "service_worker": "background.js"
   },
+  "permissions": [
+    "webNavigation"
+  ],
   "content_scripts": [
     {
-      "matches": ["https://www.youtube.com/shorts/*"],
+      "matches": ["https://www.youtube.com/*"],
       "js": ["content.js"]
     }
   ]
