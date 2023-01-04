@@ -1,4 +1,8 @@
 {
+  "author": {
+    "name": "Ji Xi Yang",
+    "url": "https://github.com/jx3yang"
+  },
   "scripts": {
     "build": "webpack"
   },
