@@ -13,6 +13,7 @@ const progressBarContainerStyle = `
   pointer-events: all;
   z-index: 10;
   bottom: 15%;
+  cursor: pointer;
 `
 
 const progressBarStyle = `
@@ -78,10 +79,85 @@ const areDifferentElements = (currentElements: Element[], newElements: Element[]
   return currentElements.findIndex((element, index) => element !== newElements[index]) > 0
 }
 
+const createDivWithStyle = (style: string) => {
+  let div = document.createElement('div')
+  div.setAttribute('style', style)
+  return div
+}
+
+/**
+ * Creates the progress bar container element with the corresponding event listeners
+ * 
+ * @param videoElement the short video element
+ * @returns the progress bar container element
+ */
+const createProgressBarContainer = (videoElement: HTMLVideoElement) => {
+  let progressBarContainer = createDivWithStyle(progressBarContainerStyle)
+  let progressBar = createDivWithStyle(progressBarStyle)
+  let progressed = createDivWithStyle(progressedStyle('0%'))
+  progressBar.appendChild(progressed)
+  progressBarContainer.appendChild(progressBar)
+
+  const clipNumber = (n: number, left: number, right: number) => {
+    if (left <= n && n <= right) {
+      return n
+    }
+    if (left <= n) {
+      return right
+    }
+    return left
+  }
+
+  const updateVideoProgress = (clientX: number) => {
+    const { x: containerX } = progressBarContainer.getBoundingClientRect()
+    const { offsetWidth } = progressBarContainer
+    const offsetX = clipNumber(clientX - containerX, 0, offsetWidth)
+
+    const percentComplete = (offsetX * 100) / offsetWidth
+    progressed.setAttribute('style', progressedStyle(`${percentComplete}%`))
+    videoElement.currentTime = (offsetX * videoElement.duration) / offsetWidth
+  }
+
+  videoElement.addEventListener('timeupdate', () => {
+    if (!isNaN(videoElement.duration)) {
+      const percentComplete = (videoElement.currentTime * 100) / videoElement.duration
+      progressed.setAttribute('style', progressedStyle(`${percentComplete}%`))
+    }
+  })
+
+  // dragging logic starts here
+  let isPressedDown = false
+
+  progressBarContainer.addEventListener('mousedown', (e) => {
+    // 0 is left click
+    if (e.button === 0) {
+      e.preventDefault()
+      isPressedDown = true
+    }
+  })
+
+  document.addEventListener('mousemove', (e) => {
+    if (isPressedDown) {
+      e.preventDefault()
+      const { clientX } = e
+      updateVideoProgress(clientX)
+    }
+  })
+
+  document.addEventListener('mouseup', (e) => {
+    if (isPressedDown && e.button === 0) {
+      e.preventDefault()
+      isPressedDown = false
+      const { clientX } = e
+      updateVideoProgress(clientX)
+    }
+  })
+
+  return progressBarContainer
+}
+
 /**
  * Creates a progress bar for the video inside the parent element, and appends it to the overlay inside the parent
- * 
- * TODO: implement dragging
  * 
  * @param parent the parent element that contains the video element
  * @returns the progress bar element
@@ -98,36 +174,12 @@ const createProgressBarAndAppend = (parent?: Element | null) => {
         return existingContainerDiv
       }
 
-      let containerDiv = document.createElement('div')
+      let containerDiv = createDivWithStyle(containerStyle)
       containerDiv.id = containerDivId
-      containerDiv.setAttribute('style', containerStyle)
-      let progressBarContainer = document.createElement('div')
-      progressBarContainer.setAttribute('style', progressBarContainerStyle)
-      let progressBar = document.createElement('div')
-      progressBar.setAttribute('style', progressBarStyle)
-      let progressed = document.createElement('div')
-      progressed.setAttribute('style', progressedStyle('0%'))
+      let progressBarContainer = createProgressBarContainer(videoElement)
 
-      videoElement.addEventListener('timeupdate', () => {
-        if (!isNaN(videoElement.duration)) {
-          const percent_complete = (videoElement.currentTime * 100) / videoElement.duration
-          progressed.setAttribute('style', progressedStyle(`${percent_complete}%`))
-        }
-      })
-
-      progressBar.appendChild(progressed)
-      progressBarContainer.appendChild(progressBar)
       containerDiv.appendChild(progressBarContainer)
       overlay.appendChild(containerDiv)
-
-      progressBarContainer.onclick = (e) => {
-        const { type, offsetX } = e
-        if (type === 'click') {
-          const percent_complete = (offsetX * 100) / progressBarContainer.offsetWidth
-          progressed.setAttribute('style', progressedStyle(`${percent_complete}%`))
-          videoElement.currentTime = (offsetX * videoElement.duration) / progressBarContainer.offsetWidth
-        }
-      }
 
       return containerDiv
     }
