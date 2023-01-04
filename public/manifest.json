@@ -2,7 +2,7 @@
   "author": "jx3yang",
   "name": "YouTube Shorts Progress Bar",
   "description": "Gives you a progress bar for YouTube shorts",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "manifest_version": 3,
   "background": {
     "service_worker": "background.js"
