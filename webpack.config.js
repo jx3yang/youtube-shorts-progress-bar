@@ -15,16 +15,16 @@ const cssRule = {
 }
 
 const plugins = [
-  new HTMLWebpackPlugin({
-    template: './src/pages/Popup/index.html',
-    filename: 'Popup.html',
-    chunks: ['Popup'],
-  }),
-  new HTMLWebpackPlugin({
-    template: './src/pages/Options/index.html',
-    filename: 'Options.html',
-    chunks: ['Options'],
-  }),
+  // new HTMLWebpackPlugin({
+  //   template: './src/pages/Popup/index.html',
+  //   filename: 'Popup.html',
+  //   chunks: ['Popup'],
+  // }),
+  // new HTMLWebpackPlugin({
+  //   template: './src/pages/Options/index.html',
+  //   filename: 'Options.html',
+  //   chunks: ['Options'],
+  // }),
   new CopyWebpackPlugin({
     patterns: [
       { from: 'public', to: '.' },
@@ -36,8 +36,8 @@ const plugins = [
 module.exports = {
   mode: 'production',
   entry: {
-    Popup: './src/pages/Popup/index.tsx',
-    Options: './src/pages/Options/index.tsx',
+    // Popup: './src/pages/Popup/index.tsx',
+    // Options: './src/pages/Options/index.tsx',
     content: './src/scripts/content.ts',
     background: './src/scripts/background.ts',
   },

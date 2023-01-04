@@ -3,10 +3,6 @@
   "description": "Gives you a progress bar for YouTube shorts",
   "version": "0.1.0",
   "manifest_version": 3,
-  "action": {
-    "default_popup": "Popup.html"
-  },
-  "options_page": "Options.html",
   "background": {
     "service_worker": "background.js"
   },
