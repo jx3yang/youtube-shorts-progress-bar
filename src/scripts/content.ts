@@ -1,3 +1,7 @@
+import { youtubeShorts } from "./youtube-shorts"
+
+const allPages = [youtubeShorts]
+
 const containerStyle = `
   width: 100%;
   position: inherit;
@@ -33,16 +37,6 @@ const progressedStyle = (width: string) => `
   background-color: rgba(255,255,255,1);
 `
 
-/**
- * @returns the list of shorts
- */
-const querySelectShortsElements = () => [...document.querySelectorAll(".reel-video-in-sequence")]
-
-/**
- * @returns the container of the shorts
- */
-const querySelectShortsContainer = () => document.querySelector("#shorts-inner-container")
-
 function waitUntil<T>(loader: () => T | null | undefined, condition: (t: T) => boolean, intervalMs: number = 500): Promise<T> {
   return new Promise<T>((resolve) => {
     const element = loader()
@@ -57,19 +51,6 @@ function waitUntil<T>(loader: () => T | null | undefined, condition: (t: T) => b
       }
     }, intervalMs)
   })
-}
-
-const getShortsElements = () => waitUntil<Element[]>(querySelectShortsElements, (elements) => elements.length > 0)
-
-const getShortsContainer = () => waitUntil<Element>(querySelectShortsContainer, (element) => !!element)
-
-/**
- * 
- * @param shorts the list of currently rendered shorts elements on the page
- * @returns the active element
- */
-const findCurrentActiveElement = (shorts: Element[]) => {
-  return shorts.find((short) => !!(short.attributes as any)['is-active'])
 }
 
 const areDifferentElements = (currentElements: Element[], newElements: Element[]) => {
@@ -159,17 +140,18 @@ const createProgressBarContainer = (videoElement: HTMLVideoElement) => {
 /**
  * Creates a progress bar for the video inside the parent element, and appends it to the overlay inside the parent
  * 
+ * @param page the page interface
  * @param parent the parent element that contains the video element
  * @returns the progress bar element
  */
-const createProgressBarAndAppend = (parent?: Element | null) => {
+const createProgressBarAndAppendForPage = (page: Page, parent?: Element | null) => {
   if (parent) { 
-    const overlay = parent.querySelector('#overlay')
-    const videoElement = parent.querySelector('video')
+    const appendParent = page.getAppendParentFromParent(parent)
+    const videoElement = page.getVideoElementFromParent(parent)
 
-    if (videoElement && overlay) {
+    if (videoElement && appendParent) {
       const containerDivId = "youtube-shorts-progress-bar-container-id"
-      const existingContainerDiv = overlay.querySelector(`#${containerDivId}`)
+      const existingContainerDiv = appendParent.querySelector(`#${containerDivId}`)
       if (existingContainerDiv) {
         return existingContainerDiv
       }
@@ -179,29 +161,27 @@ const createProgressBarAndAppend = (parent?: Element | null) => {
       let progressBarContainer = createProgressBarContainer(videoElement)
 
       containerDiv.appendChild(progressBarContainer)
-      overlay.appendChild(containerDiv)
+      appendParent.appendChild(containerDiv)
 
       return containerDiv
     }
   }
 }
 
-const getVideoParentElement = (rendererElement: Element) => waitUntil<Element>(() => rendererElement, (element) => !!element.querySelector('.html5-video-container') && !!element.querySelector('#overlay'), 50)
+/**
+ * Starting point.
+ * 
+ * @param page the page interface
+ */
+const bootstrapPage = (page: Page) => {
+  let allParentElements: Element[] = []
 
-const bootstrap = () => {
-  let shortsElements: Element[] = []
-
-  let activeElement: Element
+  let activeParentElement: Element
   let activeProgressBar: Element | undefined
 
-  // this observes each short element to listen for changes in the 'is-active' attribute
   const elementsObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      // so the refresh is going to be dispatched twice
-      //   1. when the currently active becomes inactive, a mutation is observed
-      //   2. when a new element becomes active, another mutation is observed
-      // but calling refresh multiple times is no big deal, and it's simpler this way
-      if (mutation.type === 'attributes' && mutation.attributeName === 'is-active') {
+      if (page.refreshOnElementMutation(mutation)) {
         refreshActiveElement()
       }
     })
@@ -210,36 +190,46 @@ const bootstrap = () => {
   // this observes for the shorts container element to listen for new rendered elements
   const containerObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
-      if (mutation.type === 'childList') {
-        refreshShortsElements()
+      if (page.refreshOnContainerMutation(mutation)) {
+        refreshParentElements()
       }
     })
   })
 
-  const getActiveElement = (elements: Element[]) => waitUntil<Element>(() => findCurrentActiveElement(elements), (element) => !!element, 500)
+  const refreshActiveElement = () => {
+    getActiveParentElement(allParentElements).then(setActiveParentElement)
+  }
 
-  const setActiveElement = (element?: Element) => {
-    if (element && activeElement !== element) {
-      activeElement = element
+  const getParentElements = () =>
+    waitUntil<Element[]>(page.queryParentElements, (elements) => elements && elements.length > 0)
+  const getContainerElement = () =>
+    waitUntil<Element>(page.queryContainerElement, (element) => !!element)
+
+  const getActiveParentElement = (elements: Element[]) =>
+    waitUntil<Element>(() => page.findCurrentActiveParentElement(elements), (element) => !!element, 500)
+
+  const waitUntilVideoIsReady = (element: Element) =>
+    waitUntil<boolean>(() => page.isVideoElementReady(element), (ready) => ready, 50)
+
+  const setActiveParentElement = (element?: Element) => {
+    if (element && activeParentElement !== element) {
+      activeParentElement = element
       if (activeProgressBar) {
         activeProgressBar.remove()
       }
-      getVideoParentElement(activeElement).then((videoParent) => {
-        activeProgressBar = createProgressBarAndAppend(videoParent)
+      waitUntilVideoIsReady(activeParentElement).then(() => {
+        activeProgressBar = createProgressBarAndAppendForPage(page, activeParentElement)
       })
     }
   }
 
-  const refreshActiveElement = () => {
-    getActiveElement(shortsElements).then(setActiveElement)
-  }
-
-  const setShortsElements = (newElements: Element[]) => {
-    if (areDifferentElements(shortsElements, newElements)) {
-      shortsElements = newElements
+  const setParentElements = (newElements: Element[]) => {
+    if (areDifferentElements(allParentElements, newElements)) {
+      console.log(newElements)
+      allParentElements = newElements
       // the most correct way would be to take the difference between the current elements and the new elements
       // and only setup the observer on those, but this does the job and is simpler
-      shortsElements.forEach((element) => {
+      allParentElements.forEach((element) => {
         elementsObserver.observe(element, {
           attributes: true
         })
@@ -248,31 +238,35 @@ const bootstrap = () => {
     }
   }
 
-  const refreshShortsElements = () => {
-    getShortsElements().then(setShortsElements)
+  const refreshParentElements = () => {
+    getParentElements().then(setParentElements)
   }
 
   // when the container is ready, setup the observer on it
-  getShortsContainer().then((shortsContainer) => {
-    containerObserver.observe(shortsContainer, {
+  getContainerElement().then((container) => {
+    containerObserver.observe(container, {
       childList: true
     })
   })
 
-  // triggers the polling of the shorts elements
-  refreshShortsElements()
+  // triggers the polling of the elements
+  refreshParentElements()
 }
 
-const bootstrapIfOnShortsPage = () => {
-  const shortsUrlPattern = /^https\:\/\/www\.youtube\.com\/shorts*/
+const bootstrapIfOnPage = (page: Page) => {
+  const urlPatterns = page.urlPatterns()
   const currentUrl = window.location.href
-  if (shortsUrlPattern.test(currentUrl)) {
-    bootstrap()
+  if (urlPatterns.findIndex((pattern) => pattern.test(currentUrl)) >= 0) {
+    bootstrapPage(page)
   }
 }
 
-bootstrapIfOnShortsPage()
+const mainBootstrap = () => {
+  allPages.forEach(bootstrapIfOnPage)
+}
+
+mainBootstrap()
 
 chrome.runtime.onMessage.addListener((request: Message) => {
-  bootstrapIfOnShortsPage()
+  mainBootstrap()
 })
