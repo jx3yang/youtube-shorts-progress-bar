@@ -225,7 +225,6 @@ const bootstrapPage = (page: Page) => {
 
   const setParentElements = (newElements: Element[]) => {
     if (areDifferentElements(allParentElements, newElements)) {
-      console.log(newElements)
       allParentElements = newElements
       // the most correct way would be to take the difference between the current elements and the new elements
       // and only setup the observer on those, but this does the job and is simpler
