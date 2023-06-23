@@ -6,7 +6,7 @@ I will not admit that I am addicted to YouTube shorts, but I will say that I do 
 Luckily, nowadays we can solve annoying things with a bit of coding. If there is no progress bar, then I'll just add one myself. This repository contains the code for a Chrome Extension that adds a simple interactive progress bar to the YouTube shorts.
 
 ## Installation
-Download the zip file of the [latest release](https://github.com/jx3yang/youtube-shorts-progress-bar/releases/tag/v1.0.0) named `youtube-shorts-progress-bar.zip`. Unzip the file, it should contain a folder named `dist/`. Open Chrome, and navigate to `chrome://extensions`. On top right, make sure that `Developer mode` is turned on. Then, click on `Load unpacked` on the top left, and select the `dist/` folder. The extension is now loaded.
+Download the zip file of the [latest release](https://github.com/jx3yang/youtube-shorts-progress-bar/releases/tag/v1.0.1) named `youtube-shorts-progress-bar.zip`. Unzip the file, it should contain a folder named `dist/`. Open Chrome, and navigate to `chrome://extensions`. On top right, make sure that `Developer mode` is turned on. Then, click on `Load unpacked` on the top left, and select the `dist/` folder. The extension is now loaded.
 
 ## Build
 If you want to build the extension from source, you can do so by cloning the repository and running
