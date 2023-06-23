@@ -42,14 +42,15 @@ function waitUntil<T>(loader: () => T | null | undefined, condition: (t: T) => b
     const element = loader()
     if (element && condition(element)) {
       resolve(element)
+    } else {
+      const intervalId = setInterval(() => {
+        const element = loader()
+        if (element && condition(element)) {
+          clearInterval(intervalId)
+          resolve(element)
+        }
+      }, intervalMs)
     }
-    const intervalId = setInterval(() => {
-      const element = loader()
-      if (element && condition(element)) {
-        clearInterval(intervalId)
-        resolve(element)
-      }
-    }, intervalMs)
   })
 }
 
@@ -208,6 +209,7 @@ const bootstrapPage = (page: Page) => {
   const getActiveParentElement = (elements: Element[]) =>
     waitUntil<Element>(() => page.findCurrentActiveParentElement(elements), (element) => !!element, 500)
 
+  /* TODO: remove this */
   const waitUntilVideoIsReady = (element: Element) =>
     waitUntil<boolean>(() => page.isVideoElementReady(element), (ready) => ready, 50)
 
@@ -252,9 +254,15 @@ const bootstrapPage = (page: Page) => {
   refreshParentElements()
 }
 
+let lastUrl = ""
+
 const bootstrapIfOnPage = (page: Page) => {
   const urlPatterns = page.urlPatterns()
   const currentUrl = window.location.href
+  if (lastUrl === currentUrl) {
+    return
+  }
+  lastUrl = currentUrl
   if (urlPatterns.findIndex((pattern) => pattern.test(currentUrl)) >= 0) {
     bootstrapPage(page)
   }

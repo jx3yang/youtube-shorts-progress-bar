@@ -2,7 +2,7 @@ const querySelectShortElements = () => [...document.querySelectorAll(".reel-vide
 const querySelectShortsContainer = () => document.querySelector("#shorts-inner-container")
 
 const findCurrentActiveShort = (shorts: Element[]) => {
-  return shorts.find((short) => !!(short.attributes as any)['is-active'])
+  return shorts.find((short) => !!(short.attributes as any)['is-active'] && short.querySelector("video"))
 }
 
 const isShortVideoReady = (parent: Element) =>
